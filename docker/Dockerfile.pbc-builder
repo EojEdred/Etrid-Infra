@@ -1,0 +1,63 @@
+# Dockerfile for building all PBC collators for Linux deployment
+FROM rust:1.89 as builder
+
+WORKDIR /etrid
+
+# Install dependencies for Substrate/Polkadot builds
+RUN apt-get update && apt-get install -y \
+    cmake \
+    pkg-config \
+    libssl-dev \
+    git \
+    clang \
+    libclang-dev \
+    protobuf-compiler \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install wasm toolchain
+RUN rustup target add wasm32-unknown-unknown
+
+# Copy source code
+COPY . .
+
+# Build all PBC collators in release mode
+# This will take 60-90 minutes but produces optimized Linux binaries
+RUN echo "Building all 12 PBC collators..." && \
+    cargo build --release -p btc-pbc-collator && echo "✓ btc-pbc-collator" && \
+    cargo build --release -p sol-pbc-collator && echo "✓ sol-pbc-collator" && \
+    cargo build --release -p bnb-pbc-collator && echo "✓ bnb-pbc-collator" && \
+    cargo build --release -p edsc-pbc-collator && echo "✓ edsc-pbc-collator" && \
+    cargo build --release -p xrp-pbc-collator && echo "✓ xrp-pbc-collator" && \
+    cargo build --release -p matic-pbc-collator && echo "✓ matic-pbc-collator" && \
+    cargo build --release -p sc-usdt-pbc-collator && echo "✓ sc-usdt-pbc-collator" && \
+    cargo build --release -p xlm-pbc-collator && echo "✓ xlm-pbc-collator" && \
+    cargo build --release -p trx-pbc-collator && echo "✓ trx-pbc-collator" && \
+    cargo build --release -p ada-pbc-collator && echo "✓ ada-pbc-collator" && \
+    cargo build --release -p link-pbc-collator && echo "✓ link-pbc-collator" && \
+    cargo build --release -p doge-pbc-collator && echo "✓ doge-pbc-collator" && \
+    echo "=== ALL 12 PBC COLLATORS BUILT ===" && \
+    ls -lh /etrid/target/release/*-pbc-collator
+
+# Final lightweight image with all collators
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy all PBC collator binaries from builder
+COPY --from=builder /etrid/target/release/*-pbc-collator /usr/local/bin/
+
+# Create data directories for each chain
+RUN mkdir -p /data/btc-pbc /data/sol-pbc /data/bnb-pbc /data/edsc-pbc \
+    /data/xrp-pbc /data/matic-pbc /data/sc-usdt-pbc /data/xlm-pbc \
+    /data/trx-pbc /data/ada-pbc /data/link-pbc /data/doge-pbc
+
+# Expose standard Substrate ports for all chains
+# RPC: 9944-9955, WS: 9933-9944, P2P: 30333-30344, Prometheus: 9615-9626
+EXPOSE 9933-9955 30333-30344 9615-9626
+
+# Default to btc-pbc-collator, can be overridden
+ENTRYPOINT ["/usr/local/bin/btc-pbc-collator"]

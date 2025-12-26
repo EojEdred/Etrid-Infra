@@ -1,0 +1,129 @@
+{
+  "description": "PBC (Partition Burst Chain) WebSocket endpoints for attestation submission",
+  "version": "1.0.0",
+  "lastUpdated": "2025-12-04",
+  "chains": {
+    "solana-pbc": {
+      "name": "Solana PBC",
+      "wsEndpoint": "ws://10.0.0.101:9944",
+      "httpEndpoint": "http://10.0.0.101:9933",
+      "chainId": 1,
+      "enabled": true,
+      "description": "Solana bridge partition chain"
+    },
+    "bnb-pbc": {
+      "name": "BNB Chain PBC",
+      "wsEndpoint": "ws://10.0.0.102:9944",
+      "httpEndpoint": "http://10.0.0.102:9933",
+      "chainId": 2,
+      "enabled": true,
+      "description": "BNB Smart Chain bridge partition chain"
+    },
+    "ethereum-pbc": {
+      "name": "Ethereum PBC",
+      "wsEndpoint": "ws://10.0.0.103:9944",
+      "httpEndpoint": "http://10.0.0.103:9933",
+      "chainId": 3,
+      "enabled": true,
+      "description": "Ethereum bridge partition chain"
+    },
+    "polygon-pbc": {
+      "name": "Polygon PBC",
+      "wsEndpoint": "ws://10.0.0.104:9944",
+      "httpEndpoint": "http://10.0.0.104:9933",
+      "chainId": 4,
+      "enabled": true,
+      "description": "Polygon bridge partition chain"
+    },
+    "tron-pbc": {
+      "name": "Tron PBC",
+      "wsEndpoint": "ws://10.0.0.105:9944",
+      "httpEndpoint": "http://10.0.0.105:9933",
+      "chainId": 5,
+      "enabled": true,
+      "description": "Tron bridge partition chain"
+    },
+    "xrp-pbc": {
+      "name": "XRP Ledger PBC",
+      "wsEndpoint": "ws://10.0.0.106:9944",
+      "httpEndpoint": "http://10.0.0.106:9933",
+      "chainId": 6,
+      "enabled": true,
+      "description": "XRP Ledger bridge partition chain"
+    },
+    "bitcoin-pbc": {
+      "name": "Bitcoin PBC",
+      "wsEndpoint": "ws://10.0.0.107:9944",
+      "httpEndpoint": "http://10.0.0.107:9933",
+      "chainId": 7,
+      "enabled": true,
+      "description": "Bitcoin bridge partition chain"
+    },
+    "cardano-pbc": {
+      "name": "Cardano PBC",
+      "wsEndpoint": "ws://10.0.0.108:9944",
+      "httpEndpoint": "http://10.0.0.108:9933",
+      "chainId": 8,
+      "enabled": true,
+      "description": "Cardano bridge partition chain"
+    },
+    "stellar-pbc": {
+      "name": "Stellar PBC",
+      "wsEndpoint": "ws://10.0.0.109:9944",
+      "httpEndpoint": "http://10.0.0.109:9933",
+      "chainId": 9,
+      "enabled": true,
+      "description": "Stellar bridge partition chain"
+    },
+    "arbitrum-pbc": {
+      "name": "Arbitrum PBC",
+      "wsEndpoint": "ws://10.0.0.110:9944",
+      "httpEndpoint": "http://10.0.0.110:9933",
+      "chainId": 10,
+      "enabled": true,
+      "description": "Arbitrum bridge partition chain"
+    },
+    "avalanche-pbc": {
+      "name": "Avalanche PBC",
+      "wsEndpoint": "ws://10.0.0.111:9944",
+      "httpEndpoint": "http://10.0.0.111:9933",
+      "chainId": 11,
+      "enabled": true,
+      "description": "Avalanche bridge partition chain"
+    },
+    "optimism-pbc": {
+      "name": "Optimism PBC",
+      "wsEndpoint": "ws://10.0.0.112:9944",
+      "httpEndpoint": "http://10.0.0.112:9933",
+      "chainId": 12,
+      "enabled": true,
+      "description": "Optimism bridge partition chain"
+    },
+    "base-pbc": {
+      "name": "Base PBC",
+      "wsEndpoint": "ws://10.0.0.113:9944",
+      "httpEndpoint": "http://10.0.0.113:9933",
+      "chainId": 13,
+      "enabled": true,
+      "description": "Base bridge partition chain"
+    }
+  },
+  "notes": [
+    "All PBC chains run on internal network (10.0.0.x range)",
+    "WebSocket ports: 9944 (default Substrate WS)",
+    "HTTP RPC ports: 9933 (default Substrate HTTP)",
+    "Each PBC has pallet-bridge-attestation for verifying cross-chain messages",
+    "Attestations require M-of-N signatures from authorized attesters",
+    "Production deployments should use TLS/WSS for external access"
+  ],
+  "testnet": {
+    "solana-pbc": {
+      "name": "Solana PBC (Testnet)",
+      "wsEndpoint": "ws://testnet.etrid.network:9944",
+      "httpEndpoint": "http://testnet.etrid.network:9933",
+      "chainId": 1,
+      "enabled": false,
+      "description": "Testnet Solana bridge partition chain"
+    }
+  }
+}

@@ -1,0 +1,363 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Prometheus Alert Rules for Ëtrid Bridge Monitoring Stack
+# Critical, warning, and informational alerts for bridge operations
+# ═══════════════════════════════════════════════════════════════════════
+
+groups:
+  # ═══════════════════════════════════════════════════════════════════════
+  # Bridge Monitor Health Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: bridge_monitor_health
+    interval: 30s
+    rules:
+      - alert: BridgeMonitorDown
+        expr: up{service="bridge-monitor"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: bridge-monitor
+        annotations:
+          summary: "Bridge monitor {{ $labels.chain }} is down"
+          description: "Bridge monitor for {{ $labels.chain }} has been down for more than 2 minutes. PBC: {{ $labels.pbc }}"
+
+      - alert: BridgeMonitorHealthCheckFailing
+        expr: probe_success{job="blackbox-http"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          component: bridge-monitor
+        annotations:
+          summary: "Bridge monitor health check failing: {{ $labels.instance }}"
+          description: "Health check for {{ $labels.instance }} has been failing for 3 minutes"
+
+      - alert: BridgeMonitorHighMemoryUsage
+        expr: container_memory_usage_bytes{name=~"etrid-bridge-monitor.*"} / container_spec_memory_limit_bytes{name=~"etrid-bridge-monitor.*"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: bridge-monitor
+        annotations:
+          summary: "High memory usage on {{ $labels.name }}"
+          description: "Memory usage is above 90% on {{ $labels.name }}"
+
+      - alert: BridgeMonitorHighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name=~"etrid-bridge-monitor.*"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          component: bridge-monitor
+        annotations:
+          summary: "High CPU usage on {{ $labels.name }}"
+          description: "CPU usage is above 80% on {{ $labels.name }}"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Attestation Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: attestation_alerts
+    interval: 30s
+    rules:
+      - alert: AttestationAggregatorDown
+        expr: up{service="attestation-aggregator"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: attestation-aggregator
+        annotations:
+          summary: "Attestation aggregator {{ $labels.instance_id }} is down"
+          description: "Attestation aggregator instance {{ $labels.instance_id }} has been down for 2 minutes"
+
+      - alert: InsufficientAttestationAggregators
+        expr: count(up{service="attestation-aggregator"} == 1) < 3
+        for: 1m
+        labels:
+          severity: critical
+          component: attestation-aggregator
+        annotations:
+          summary: "Insufficient attestation aggregators online"
+          description: "Only {{ $value }} attestation aggregators are online. Minimum required: 3"
+
+      - alert: AttestationConsensusFailure
+        expr: rate(attestation_consensus_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: attestation
+        annotations:
+          summary: "High attestation consensus failure rate"
+          description: "Attestation consensus is failing at {{ $value }} failures per second"
+
+      - alert: AttestationTimeout
+        expr: rate(attestation_timeouts_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: attestation
+        annotations:
+          summary: "High attestation timeout rate"
+          description: "Attestations are timing out at {{ $value }} per second"
+
+      - alert: SlowAttestationProcessing
+        expr: histogram_quantile(0.95, rate(attestation_processing_duration_seconds_bucket[5m])) > 60
+        for: 10m
+        labels:
+          severity: warning
+          component: attestation
+        annotations:
+          summary: "Slow attestation processing"
+          description: "95th percentile attestation processing time is {{ $value }}s (threshold: 60s)"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Relayer Service Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: relayer_alerts
+    interval: 30s
+    rules:
+      - alert: RelayerServiceDown
+        expr: up{service="relayer"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: relayer
+        annotations:
+          summary: "Relayer service is down"
+          description: "Relayer service has been down for 2 minutes. Bridge operations are halted."
+
+      - alert: RelayerSubmissionFailures
+        expr: rate(relayer_submission_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: relayer
+        annotations:
+          summary: "High relayer submission failure rate"
+          description: "Relayer is failing to submit proofs at {{ $value }} failures per second"
+
+      - alert: RelayerQueueBacklog
+        expr: relayer_pending_submissions > 100
+        for: 10m
+        labels:
+          severity: warning
+          component: relayer
+        annotations:
+          summary: "Large relayer submission queue"
+          description: "Relayer has {{ $value }} pending submissions (threshold: 100)"
+
+      - alert: RelayerHighGasPrice
+        expr: relayer_gas_price_gwei > 500
+        for: 5m
+        labels:
+          severity: warning
+          component: relayer
+        annotations:
+          summary: "Relayer encountering high gas prices"
+          description: "Current gas price is {{ $value }} Gwei (threshold: 500 Gwei)"
+
+      - alert: RelayerInsufficientBalance
+        expr: relayer_balance_wei < 1e18
+        for: 1m
+        labels:
+          severity: critical
+          component: relayer
+        annotations:
+          summary: "Relayer has insufficient balance"
+          description: "Relayer balance is {{ $value }} Wei (< 1 ETH equivalent)"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Cross-Chain Monitoring Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: cross_chain_alerts
+    interval: 30s
+    rules:
+      - alert: ChainSyncLag
+        expr: chain_sync_lag_blocks > 100
+        for: 10m
+        labels:
+          severity: warning
+          component: bridge-monitor
+        annotations:
+          summary: "{{ $labels.chain }} sync lag detected"
+          description: "{{ $labels.chain }} is {{ $value }} blocks behind (threshold: 100 blocks)"
+
+      - alert: NoRecentBlocks
+        expr: time() - chain_latest_block_timestamp > 300
+        for: 5m
+        labels:
+          severity: critical
+          component: bridge-monitor
+        annotations:
+          summary: "No recent blocks from {{ $labels.chain }}"
+          description: "No blocks received from {{ $labels.chain }} in the last 5 minutes"
+
+      - alert: BridgeEventMismatch
+        expr: abs(bridge_events_detected{chain=~".*"} - bridge_events_processed{chain=~".*"}) > 10
+        for: 15m
+        labels:
+          severity: critical
+          component: bridge-monitor
+        annotations:
+          summary: "Bridge event mismatch on {{ $labels.chain }}"
+          description: "Detected {{ $labels.chain }} events differ from processed by {{ $value }}"
+
+      - alert: UnconfirmedTransactions
+        expr: bridge_unconfirmed_transactions > 50
+        for: 30m
+        labels:
+          severity: warning
+          component: bridge-monitor
+        annotations:
+          summary: "High number of unconfirmed transactions on {{ $labels.chain }}"
+          description: "{{ $value }} unconfirmed transactions on {{ $labels.chain }} (threshold: 50)"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Security Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: security_alerts
+    interval: 30s
+    rules:
+      - alert: UnauthorizedAccessAttempt
+        expr: rate(http_requests_total{code=~"401|403"}[5m]) > 5
+        for: 2m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High rate of unauthorized access attempts"
+          description: "{{ $value }} unauthorized access attempts per second on {{ $labels.job }}"
+
+      - alert: InvalidSignatureDetected
+        expr: rate(bridge_invalid_signatures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: security
+        annotations:
+          summary: "Invalid signatures detected"
+          description: "{{ $value }} invalid signatures detected per second - possible attack"
+
+      - alert: DuplicateNonceDetected
+        expr: rate(bridge_duplicate_nonce_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: security
+        annotations:
+          summary: "Duplicate nonce detected"
+          description: "{{ $value }} duplicate nonce attempts per second - possible replay attack"
+
+      - alert: UnexpectedContractInteraction
+        expr: rate(bridge_unexpected_contract_calls_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Unexpected contract interactions"
+          description: "{{ $value }} unexpected contract calls per second on {{ $labels.chain }}"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # PBC Connection Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: pbc_connection_alerts
+    interval: 30s
+    rules:
+      - alert: PBCDisconnected
+        expr: pbc_connection_status == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: pbc
+        annotations:
+          summary: "{{ $labels.pbc }} disconnected"
+          description: "PBC {{ $labels.pbc }} has been disconnected for 2 minutes"
+
+      - alert: PBCHighLatency
+        expr: pbc_rpc_latency_seconds > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: pbc
+        annotations:
+          summary: "High latency on {{ $labels.pbc }}"
+          description: "PBC {{ $labels.pbc }} RPC latency is {{ $value }}s (threshold: 5s)"
+
+      - alert: FlareChainDisconnected
+        expr: flarechain_connection_status == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: flarechain
+        annotations:
+          summary: "FlareChain disconnected"
+          description: "FlareChain connection has been down for 1 minute - bridge operations halted"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Performance Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: performance_alerts
+    interval: 30s
+    rules:
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 10m
+        labels:
+          severity: warning
+          component: performance
+        annotations:
+          summary: "High API latency on {{ $labels.job }}"
+          description: "95th percentile API latency is {{ $value }}s (threshold: 2s)"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{code=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: performance
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      - alert: DatabaseSlowQueries
+        expr: histogram_quantile(0.95, rate(database_query_duration_seconds_bucket[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries"
+          description: "95th percentile query duration is {{ $value }}s (threshold: 1s)"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Data Integrity Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: data_integrity_alerts
+    interval: 30s
+    rules:
+      - alert: MerkleRootMismatch
+        expr: rate(bridge_merkle_root_mismatches_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: data-integrity
+        annotations:
+          summary: "Merkle root mismatch detected"
+          description: "{{ $value }} merkle root mismatches per second on {{ $labels.chain }}"
+
+      - alert: StateRootInconsistency
+        expr: rate(bridge_state_root_inconsistencies_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: data-integrity
+        annotations:
+          summary: "State root inconsistency detected"
+          description: "{{ $value }} state root inconsistencies per second on {{ $labels.chain }}"
+
+      - alert: ChecksumValidationFailure
+        expr: rate(bridge_checksum_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: data-integrity
+        annotations:
+          summary: "Checksum validation failures"
+          description: "{{ $value }} checksum validation failures per second"

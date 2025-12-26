@@ -1,0 +1,20 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Grafana Datasource Provisioning - Prometheus
+# Automatically configure Prometheus datasource on Grafana startup
+# ═══════════════════════════════════════════════════════════════════════
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: 15s
+      queryTimeout: 60s
+      customQueryParameters: ''
+    editable: true
+    version: 1

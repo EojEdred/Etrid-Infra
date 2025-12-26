@@ -1,0 +1,194 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Alertmanager Configuration for Ëtrid Bridge Monitoring
+# Alert routing, grouping, and notification configuration
+# ═══════════════════════════════════════════════════════════════════════
+
+global:
+  # Default values for notification templates
+  resolve_timeout: 5m
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+  smtp_smarthost: '${SMTP_HOST}:${SMTP_PORT}'
+  smtp_from: '${ALERT_EMAIL_FROM}'
+  smtp_auth_username: '${SMTP_USER}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+# Templates for notification formatting
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration
+route:
+  # Group alerts by these labels
+  group_by: ['alertname', 'cluster', 'service', 'severity']
+
+  # How long to wait before sending a notification about new alerts
+  group_wait: 10s
+
+  # How long to wait before sending notification about new alerts added to group
+  group_interval: 10s
+
+  # How long to wait before re-sending a given alert
+  repeat_interval: 12h
+
+  # Default receiver for all alerts
+  receiver: 'default'
+
+  # Child routes
+  routes:
+    # Critical alerts - immediate notification via all channels
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      continue: true
+      group_wait: 0s
+      group_interval: 5s
+      repeat_interval: 4h
+      routes:
+        # Bridge monitor critical alerts
+        - match:
+            component: bridge-monitor
+          receiver: 'bridge-critical'
+
+        # Security critical alerts
+        - match:
+            component: security
+          receiver: 'security-critical'
+
+        # PBC connection critical alerts
+        - match:
+            component: pbc
+          receiver: 'pbc-critical'
+
+    # Warning alerts - less urgent, batched notifications
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+
+    # Informational alerts
+    - match:
+        severity: info
+      receiver: 'info-alerts'
+      group_wait: 5m
+      group_interval: 30m
+      repeat_interval: 24h
+
+# Inhibition rules - suppress certain alerts when others are firing
+inhibit_rules:
+  # Inhibit warning alerts if critical alert is firing for same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['service', 'instance']
+
+  # Inhibit all alerts if FlareChain is down
+  - source_match:
+      alertname: 'FlareChainDisconnected'
+    target_match_re:
+      alertname: '.*'
+    equal: ['cluster']
+
+  # Inhibit bridge event alerts if monitor is down
+  - source_match:
+      alertname: 'BridgeMonitorDown'
+    target_match_re:
+      alertname: 'BridgeEvent.*|ChainSync.*'
+    equal: ['chain']
+
+# Receiver configurations
+receivers:
+  # Default receiver - logs only
+  - name: 'default'
+    webhook_configs:
+      - url: 'http://localhost:5001/webhook'
+        send_resolved: true
+
+  # Critical alerts - all notification channels
+  - name: 'critical-alerts'
+    slack_configs:
+      - channel: '#etrid-bridge-critical'
+        title: 'CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+
+    email_configs:
+      - to: '${ALERT_EMAIL_TO}'
+        headers:
+          Subject: 'CRITICAL ALERT: {{ .GroupLabels.alertname }}'
+        html: '{{ template "email.default.html" . }}'
+        send_resolved: true
+
+    pagerduty_configs:
+      - routing_key: '${PAGERDUTY_INTEGRATION_KEY}'
+        description: '{{ .GroupLabels.alertname }}: {{ .GroupLabels.instance }}'
+        severity: '{{ .GroupLabels.severity }}'
+        send_resolved: true
+
+  # Bridge critical alerts
+  - name: 'bridge-critical'
+    slack_configs:
+      - channel: '#etrid-bridge-alerts'
+        title: 'BRIDGE CRITICAL: {{ .GroupLabels.chain }} - {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'danger'
+
+    email_configs:
+      - to: '${ALERT_EMAIL_TO}'
+        headers:
+          Subject: 'BRIDGE CRITICAL: {{ .GroupLabels.chain }} - {{ .GroupLabels.alertname }}'
+        send_resolved: true
+
+  # Security critical alerts
+  - name: 'security-critical'
+    slack_configs:
+      - channel: '#etrid-security-alerts'
+        title: 'SECURITY ALERT: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'danger'
+
+    pagerduty_configs:
+      - routing_key: '${PAGERDUTY_INTEGRATION_KEY}'
+        description: 'SECURITY: {{ .GroupLabels.alertname }}'
+        severity: 'critical'
+        send_resolved: true
+
+  # PBC critical alerts
+  - name: 'pbc-critical'
+    slack_configs:
+      - channel: '#etrid-pbc-alerts'
+        title: 'PBC CRITICAL: {{ .GroupLabels.pbc }} - {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'danger'
+
+  # Warning alerts
+  - name: 'warning-alerts'
+    slack_configs:
+      - channel: '#etrid-bridge-warnings'
+        title: 'WARNING: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'warning'
+
+    email_configs:
+      - to: '${ALERT_EMAIL_TO}'
+        headers:
+          Subject: 'WARNING: {{ .GroupLabels.alertname }}'
+        send_resolved: true
+
+  # Info alerts
+  - name: 'info-alerts'
+    slack_configs:
+      - channel: '#etrid-bridge-info'
+        title: 'INFO: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+        color: 'good'

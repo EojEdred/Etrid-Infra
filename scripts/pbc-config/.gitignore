@@ -1,0 +1,40 @@
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.status
+*.tmp
+
+# Private keys and secrets
+*.key
+*.pem
+*.seed
+*-mnemonic.txt
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+etrid-bridge-config
+subxt_*_config.sh
+
+# Backup files
+*.bak
+*.backup
+config.production.json
+config.*.json.backup

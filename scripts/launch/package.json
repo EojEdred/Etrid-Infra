@@ -1,0 +1,29 @@
+{
+  "name": "etrid-token-launch",
+  "version": "1.0.0",
+  "description": "ËTRID SPL Token Deployment & Launch Scripts",
+  "scripts": {
+    "deploy-token": "bash 01-deploy-spl-token.sh",
+    "create-metadata": "node 02-create-token-metadata.js"
+  },
+  "dependencies": {
+    "@metaplex-foundation/js": "^0.20.1",
+    "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
+    "@metaplex-foundation/umi": "^1.4.1",
+    "@metaplex-foundation/umi-bundle-defaults": "^1.4.1",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "keywords": [
+    "etrid",
+    "solana",
+    "spl-token",
+    "raydium",
+    "launch"
+  ],
+  "author": "Ëtrid Network",
+  "license": "MIT"
+}

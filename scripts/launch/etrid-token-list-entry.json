@@ -1,0 +1,18 @@
+{
+  "chainId": 101,
+  "address": "CA4ALvCam7N3ya8d2axp3AakwNdCdQchQNNwYSYiMRR4",
+  "symbol": "ËTR",
+  "name": "Ëtrid",
+  "decimals": 9,
+  "logoURI": "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/CA4ALvCam7N3ya8d2axp3AakwNdCdQchQNNwYSYiMRR4/logo.png",
+  "tags": [
+    "social-token",
+    "community"
+  ],
+  "extensions": {
+    "website": "https://etrid.org",
+    "twitter": "https://x.com/gizzi_io",
+    "telegram": "https://t.me/etridnetwork",
+    "discord": "https://discord.gg/etrid"
+  }
+}

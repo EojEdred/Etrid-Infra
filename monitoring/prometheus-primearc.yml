@@ -1,0 +1,108 @@
+# Prometheus Configuration for Ëtrid PrimeArc Core Chain Validators
+# This configuration scrapes metrics from PrimeArc Core Chain validators on the network
+
+global:
+  scrape_interval: 15s        # Scrape targets every 15 seconds
+  evaluation_interval: 15s    # Evaluate rules every 15 seconds
+  scrape_timeout: 10s         # Timeout after 10 seconds
+  external_labels:
+    cluster: 'etrid-primearc_core_chain-mainnet'
+    env: 'production'
+    monitor: 'etrid-prometheus'
+
+# Alertmanager configuration (optional - uncomment to enable)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - localhost:9093
+
+# Load alerting rules
+rule_files:
+  - 'alerting-rules-primearc_core_chain.yml'
+
+# Scrape configurations
+scrape_configs:
+  # ═══════════════════════════════════════════════════════════════════════
+  # Prometheus self-monitoring
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          env: 'production'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # PrimeArc Core Chain Validators - Tailscale Network
+  # ═══════════════════════════════════════════════════════════════════════
+
+  # Main Validator (100.93.43.18)
+  - job_name: 'primearc_core_chain-validator-main'
+    static_configs:
+      - targets: ['100.93.43.18:9615']
+        labels:
+          node_type: 'validator'
+          validator: 'main'
+          chain: 'primearc_core_chain_mainnet'
+          network: 'tailscale'
+          instance: 'validator-main'
+    metric_relabel_configs:
+      # Add chain label to all metrics
+      - source_labels: [__name__]
+        target_label: chain
+        replacement: primearc_core_chain_mainnet
+
+  # Additional validators can be added here
+  # Template for adding more validators:
+  # - job_name: 'primearc_core_chain-validator-02'
+  #   static_configs:
+  #     - targets: ['100.x.x.x:9615']
+  #       labels:
+  #         node_type: 'validator'
+  #         validator: 'validator-02'
+  #         chain: 'primearc_core_chain_mainnet'
+  #         network: 'tailscale'
+  #         instance: 'validator-02'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Optional: Node Exporter for System Metrics
+  # Uncomment if you have node_exporter running on validators
+  # ═══════════════════════════════════════════════════════════════════════
+  # - job_name: 'node-exporter-validators'
+  #   static_configs:
+  #     - targets:
+  #         - '100.93.43.18:9100'
+  #       labels:
+  #         node_type: 'validator'
+  #         validator: 'main'
+  #         service: 'node_exporter'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Optional: Process Exporter for Detailed Process Metrics
+  # ═══════════════════════════════════════════════════════════════════════
+  # - job_name: 'process-exporter-validators'
+  #   static_configs:
+  #     - targets:
+  #         - '100.93.43.18:9256'
+  #       labels:
+  #         node_type: 'validator'
+  #         validator: 'main'
+  #         service: 'process_exporter'
+
+# Storage configuration
+# Adjust retention based on your needs
+storage:
+  tsdb:
+    retention.time: 30d
+    retention.size: 100GB
+
+# Remote write configuration (optional - for long-term storage)
+# remote_write:
+#   - url: "http://your-remote-storage:9009/api/v1/push"
+#     queue_config:
+#       capacity: 10000
+#       max_shards: 50
+#       min_shards: 1
+#       max_samples_per_send: 5000
+#       batch_send_deadline: 5s

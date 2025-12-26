@@ -1,0 +1,779 @@
+version: '3.8'
+
+# ═══════════════════════════════════════════════════════════════════════
+# Ëtrid Bridge Monitoring Stack
+# Complete Docker Compose configuration for cross-chain bridge monitoring
+# ═══════════════════════════════════════════════════════════════════════
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════
+  # Bridge Monitor Services (One per PBC)
+  # ═══════════════════════════════════════════════════════════════════════
+
+  bridge-monitor-btc:
+    build:
+      context: ../services/bridge-monitor-service
+      dockerfile: Dockerfile
+    image: etrid/bridge-monitor:latest
+    container_name: etrid-bridge-monitor-btc
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=bridge-monitor-btc
+      - CHAIN_TYPE=bitcoin
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - PBC_WS_URL=ws://10.0.0.107:9944
+      - BITCOIN_RPC_URL=${BITCOIN_RPC_URL}
+      - BITCOIN_RPC_USER=${BITCOIN_RPC_USER}
+      - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD}
+      - API_PORT=3010
+      - METRICS_PORT=9100
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ATTESTATION_THRESHOLD=${ATTESTATION_THRESHOLD:-3}
+      - CONFIRMATION_BLOCKS=${BTC_CONFIRMATION_BLOCKS:-6}
+    ports:
+      - "3010:3010"  # API
+      - "9100:9100"  # Metrics
+    volumes:
+      - bridge-monitor-btc-data:/app/data
+      - bridge-monitor-btc-logs:/app/logs
+    networks:
+      - etrid-bridge
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=bridge-monitor"
+      - "com.etrid.chain=bitcoin"
+      - "com.etrid.type=monitoring"
+
+  bridge-monitor-sol:
+    build:
+      context: ../services/bridge-monitor-service
+      dockerfile: Dockerfile
+    image: etrid/bridge-monitor:latest
+    container_name: etrid-bridge-monitor-sol
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=bridge-monitor-sol
+      - CHAIN_TYPE=solana
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - PBC_WS_URL=ws://10.0.0.101:9944
+      - SOLANA_RPC_URL=${SOLANA_RPC_URL}
+      - SOLANA_WS_URL=${SOLANA_WS_URL}
+      - API_PORT=3011
+      - METRICS_PORT=9101
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ATTESTATION_THRESHOLD=${ATTESTATION_THRESHOLD:-3}
+      - CONFIRMATION_BLOCKS=${SOL_CONFIRMATION_BLOCKS:-32}
+    ports:
+      - "3011:3011"
+      - "9101:9101"
+    volumes:
+      - bridge-monitor-sol-data:/app/data
+      - bridge-monitor-sol-logs:/app/logs
+    networks:
+      - etrid-bridge
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=bridge-monitor"
+      - "com.etrid.chain=solana"
+      - "com.etrid.type=monitoring"
+
+  bridge-monitor-eth:
+    build:
+      context: ../services/bridge-monitor-service
+      dockerfile: Dockerfile
+    image: etrid/bridge-monitor:latest
+    container_name: etrid-bridge-monitor-eth
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=bridge-monitor-eth
+      - CHAIN_TYPE=ethereum
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - PBC_WS_URL=ws://10.0.0.103:9944
+      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL}
+      - ETHEREUM_WS_URL=${ETHEREUM_WS_URL}
+      - API_PORT=3012
+      - METRICS_PORT=9102
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ATTESTATION_THRESHOLD=${ATTESTATION_THRESHOLD:-3}
+      - CONFIRMATION_BLOCKS=${ETH_CONFIRMATION_BLOCKS:-12}
+    ports:
+      - "3012:3012"
+      - "9102:9102"
+    volumes:
+      - bridge-monitor-eth-data:/app/data
+      - bridge-monitor-eth-logs:/app/logs
+    networks:
+      - etrid-bridge
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=bridge-monitor"
+      - "com.etrid.chain=ethereum"
+      - "com.etrid.type=monitoring"
+
+  bridge-monitor-bnb:
+    build:
+      context: ../services/bridge-monitor-service
+      dockerfile: Dockerfile
+    image: etrid/bridge-monitor:latest
+    container_name: etrid-bridge-monitor-bnb
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=bridge-monitor-bnb
+      - CHAIN_TYPE=bnb
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - PBC_WS_URL=ws://10.0.0.102:9944
+      - BNB_RPC_URL=${BNB_RPC_URL}
+      - BNB_WS_URL=${BNB_WS_URL}
+      - API_PORT=3013
+      - METRICS_PORT=9103
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ATTESTATION_THRESHOLD=${ATTESTATION_THRESHOLD:-3}
+      - CONFIRMATION_BLOCKS=${BNB_CONFIRMATION_BLOCKS:-15}
+    ports:
+      - "3013:3013"
+      - "9103:9103"
+    volumes:
+      - bridge-monitor-bnb-data:/app/data
+      - bridge-monitor-bnb-logs:/app/logs
+    networks:
+      - etrid-bridge
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=bridge-monitor"
+      - "com.etrid.chain=bnb"
+      - "com.etrid.type=monitoring"
+
+  bridge-monitor-polygon:
+    build:
+      context: ../services/bridge-monitor-service
+      dockerfile: Dockerfile
+    image: etrid/bridge-monitor:latest
+    container_name: etrid-bridge-monitor-polygon
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=bridge-monitor-polygon
+      - CHAIN_TYPE=polygon
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - PBC_WS_URL=ws://10.0.0.104:9944
+      - POLYGON_RPC_URL=${POLYGON_RPC_URL}
+      - POLYGON_WS_URL=${POLYGON_WS_URL}
+      - API_PORT=3014
+      - METRICS_PORT=9104
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ATTESTATION_THRESHOLD=${ATTESTATION_THRESHOLD:-3}
+      - CONFIRMATION_BLOCKS=${POLYGON_CONFIRMATION_BLOCKS:-128}
+    ports:
+      - "3014:3014"
+      - "9104:9104"
+    volumes:
+      - bridge-monitor-polygon-data:/app/data
+      - bridge-monitor-polygon-logs:/app/logs
+    networks:
+      - etrid-bridge
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3014/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=bridge-monitor"
+      - "com.etrid.chain=polygon"
+      - "com.etrid.type=monitoring"
+
+  bridge-monitor-trx:
+    build:
+      context: ../services/bridge-monitor-service
+      dockerfile: Dockerfile
+    image: etrid/bridge-monitor:latest
+    container_name: etrid-bridge-monitor-trx
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=bridge-monitor-trx
+      - CHAIN_TYPE=tron
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - PBC_WS_URL=ws://10.0.0.105:9944
+      - TRON_RPC_URL=${TRON_RPC_URL}
+      - TRON_API_KEY=${TRON_API_KEY}
+      - API_PORT=3015
+      - METRICS_PORT=9105
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ATTESTATION_THRESHOLD=${ATTESTATION_THRESHOLD:-3}
+      - CONFIRMATION_BLOCKS=${TRX_CONFIRMATION_BLOCKS:-19}
+    ports:
+      - "3015:3015"
+      - "9105:9105"
+    volumes:
+      - bridge-monitor-trx-data:/app/data
+      - bridge-monitor-trx-logs:/app/logs
+    networks:
+      - etrid-bridge
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3015/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=bridge-monitor"
+      - "com.etrid.chain=tron"
+      - "com.etrid.type=monitoring"
+
+  bridge-monitor-xrp:
+    build:
+      context: ../services/bridge-monitor-service
+      dockerfile: Dockerfile
+    image: etrid/bridge-monitor:latest
+    container_name: etrid-bridge-monitor-xrp
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=bridge-monitor-xrp
+      - CHAIN_TYPE=xrp
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - PBC_WS_URL=ws://10.0.0.106:9944
+      - XRP_RPC_URL=${XRP_RPC_URL}
+      - XRP_WS_URL=${XRP_WS_URL}
+      - API_PORT=3016
+      - METRICS_PORT=9106
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ATTESTATION_THRESHOLD=${ATTESTATION_THRESHOLD:-3}
+      - CONFIRMATION_BLOCKS=${XRP_CONFIRMATION_BLOCKS:-1}
+    ports:
+      - "3016:3016"
+      - "9106:9106"
+    volumes:
+      - bridge-monitor-xrp-data:/app/data
+      - bridge-monitor-xrp-logs:/app/logs
+    networks:
+      - etrid-bridge
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3016/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=bridge-monitor"
+      - "com.etrid.chain=xrp"
+      - "com.etrid.type=monitoring"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Attestation Aggregator Services (M-of-N Security)
+  # 5 independent instances for Byzantine fault tolerance
+  # ═══════════════════════════════════════════════════════════════════════
+
+  attestation-aggregator-1:
+    build:
+      context: ../services/attestation-service
+      dockerfile: Dockerfile
+    image: etrid/attestation-service:latest
+    container_name: etrid-attestation-aggregator-1
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=attestation-aggregator-1
+      - INSTANCE_ID=1
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - AGGREGATOR_PRIVATE_KEY=${AGGREGATOR_1_PRIVATE_KEY}
+      - API_PORT=3020
+      - METRICS_PORT=9110
+      - MIN_ATTESTATIONS=${MIN_ATTESTATIONS:-3}
+      - MAX_ATTESTATIONS=${MAX_ATTESTATIONS:-5}
+      - ATTESTATION_TIMEOUT=${ATTESTATION_TIMEOUT:-300000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "3020:3020"
+      - "9110:9110"
+    volumes:
+      - attestation-aggregator-1-data:/app/data
+      - attestation-aggregator-1-logs:/app/logs
+    networks:
+      - etrid-bridge
+    depends_on:
+      - bridge-monitor-btc
+      - bridge-monitor-sol
+      - bridge-monitor-eth
+      - bridge-monitor-bnb
+      - bridge-monitor-polygon
+      - bridge-monitor-trx
+      - bridge-monitor-xrp
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3020/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=attestation-aggregator"
+      - "com.etrid.instance=1"
+      - "com.etrid.type=aggregation"
+
+  attestation-aggregator-2:
+    build:
+      context: ../services/attestation-service
+      dockerfile: Dockerfile
+    image: etrid/attestation-service:latest
+    container_name: etrid-attestation-aggregator-2
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=attestation-aggregator-2
+      - INSTANCE_ID=2
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - AGGREGATOR_PRIVATE_KEY=${AGGREGATOR_2_PRIVATE_KEY}
+      - API_PORT=3021
+      - METRICS_PORT=9111
+      - MIN_ATTESTATIONS=${MIN_ATTESTATIONS:-3}
+      - MAX_ATTESTATIONS=${MAX_ATTESTATIONS:-5}
+      - ATTESTATION_TIMEOUT=${ATTESTATION_TIMEOUT:-300000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "3021:3021"
+      - "9111:9111"
+    volumes:
+      - attestation-aggregator-2-data:/app/data
+      - attestation-aggregator-2-logs:/app/logs
+    networks:
+      - etrid-bridge
+    depends_on:
+      - bridge-monitor-btc
+      - bridge-monitor-sol
+      - bridge-monitor-eth
+      - bridge-monitor-bnb
+      - bridge-monitor-polygon
+      - bridge-monitor-trx
+      - bridge-monitor-xrp
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3021/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=attestation-aggregator"
+      - "com.etrid.instance=2"
+      - "com.etrid.type=aggregation"
+
+  attestation-aggregator-3:
+    build:
+      context: ../services/attestation-service
+      dockerfile: Dockerfile
+    image: etrid/attestation-service:latest
+    container_name: etrid-attestation-aggregator-3
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=attestation-aggregator-3
+      - INSTANCE_ID=3
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - AGGREGATOR_PRIVATE_KEY=${AGGREGATOR_3_PRIVATE_KEY}
+      - API_PORT=3022
+      - METRICS_PORT=9112
+      - MIN_ATTESTATIONS=${MIN_ATTESTATIONS:-3}
+      - MAX_ATTESTATIONS=${MAX_ATTESTATIONS:-5}
+      - ATTESTATION_TIMEOUT=${ATTESTATION_TIMEOUT:-300000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "3022:3022"
+      - "9112:9112"
+    volumes:
+      - attestation-aggregator-3-data:/app/data
+      - attestation-aggregator-3-logs:/app/logs
+    networks:
+      - etrid-bridge
+    depends_on:
+      - bridge-monitor-btc
+      - bridge-monitor-sol
+      - bridge-monitor-eth
+      - bridge-monitor-bnb
+      - bridge-monitor-polygon
+      - bridge-monitor-trx
+      - bridge-monitor-xrp
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3022/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=attestation-aggregator"
+      - "com.etrid.instance=3"
+      - "com.etrid.type=aggregation"
+
+  attestation-aggregator-4:
+    build:
+      context: ../services/attestation-service
+      dockerfile: Dockerfile
+    image: etrid/attestation-service:latest
+    container_name: etrid-attestation-aggregator-4
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=attestation-aggregator-4
+      - INSTANCE_ID=4
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - AGGREGATOR_PRIVATE_KEY=${AGGREGATOR_4_PRIVATE_KEY}
+      - API_PORT=3023
+      - METRICS_PORT=9113
+      - MIN_ATTESTATIONS=${MIN_ATTESTATIONS:-3}
+      - MAX_ATTESTATIONS=${MAX_ATTESTATIONS:-5}
+      - ATTESTATION_TIMEOUT=${ATTESTATION_TIMEOUT:-300000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "3023:3023"
+      - "9113:9113"
+    volumes:
+      - attestation-aggregator-4-data:/app/data
+      - attestation-aggregator-4-logs:/app/logs
+    networks:
+      - etrid-bridge
+    depends_on:
+      - bridge-monitor-btc
+      - bridge-monitor-sol
+      - bridge-monitor-eth
+      - bridge-monitor-bnb
+      - bridge-monitor-polygon
+      - bridge-monitor-trx
+      - bridge-monitor-xrp
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3023/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=attestation-aggregator"
+      - "com.etrid.instance=4"
+      - "com.etrid.type=aggregation"
+
+  attestation-aggregator-5:
+    build:
+      context: ../services/attestation-service
+      dockerfile: Dockerfile
+    image: etrid/attestation-service:latest
+    container_name: etrid-attestation-aggregator-5
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=attestation-aggregator-5
+      - INSTANCE_ID=5
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - AGGREGATOR_PRIVATE_KEY=${AGGREGATOR_5_PRIVATE_KEY}
+      - API_PORT=3024
+      - METRICS_PORT=9114
+      - MIN_ATTESTATIONS=${MIN_ATTESTATIONS:-3}
+      - MAX_ATTESTATIONS=${MAX_ATTESTATIONS:-5}
+      - ATTESTATION_TIMEOUT=${ATTESTATION_TIMEOUT:-300000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "3024:3024"
+      - "9114:9114"
+    volumes:
+      - attestation-aggregator-5-data:/app/data
+      - attestation-aggregator-5-logs:/app/logs
+    networks:
+      - etrid-bridge
+    depends_on:
+      - bridge-monitor-btc
+      - bridge-monitor-sol
+      - bridge-monitor-eth
+      - bridge-monitor-bnb
+      - bridge-monitor-polygon
+      - bridge-monitor-trx
+      - bridge-monitor-xrp
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3024/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=attestation-aggregator"
+      - "com.etrid.instance=5"
+      - "com.etrid.type=aggregation"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Relayer Service - Submits proofs to FlareChain
+  # ═══════════════════════════════════════════════════════════════════════
+
+  relayer-service:
+    build:
+      context: ../services/relayer-service
+      dockerfile: Dockerfile
+    image: etrid/relayer-service:latest
+    container_name: etrid-relayer-service
+    restart: unless-stopped
+    env_file:
+      - .env.bridge-monitors
+    environment:
+      - SERVICE_NAME=relayer-service
+      - FLARECHAIN_WS_URL=ws://10.0.0.100:9944
+      - RELAYER_PRIVATE_KEY=${RELAYER_PRIVATE_KEY}
+      - AGGREGATOR_URLS=http://attestation-aggregator-1:3020,http://attestation-aggregator-2:3021,http://attestation-aggregator-3:3022,http://attestation-aggregator-4:3023,http://attestation-aggregator-5:3024
+      - API_PORT=3030
+      - METRICS_PORT=9120
+      - MIN_AGGREGATOR_CONSENSUS=${MIN_AGGREGATOR_CONSENSUS:-3}
+      - MAX_GAS_PRICE=${MAX_GAS_PRICE:-1000000000000}
+      - SUBMISSION_RETRY_ATTEMPTS=${SUBMISSION_RETRY_ATTEMPTS:-5}
+      - SUBMISSION_RETRY_DELAY=${SUBMISSION_RETRY_DELAY:-10000}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    ports:
+      - "3030:3030"
+      - "9120:9120"
+    volumes:
+      - relayer-service-data:/app/data
+      - relayer-service-logs:/app/logs
+    networks:
+      - etrid-bridge
+    depends_on:
+      - attestation-aggregator-1
+      - attestation-aggregator-2
+      - attestation-aggregator-3
+      - attestation-aggregator-4
+      - attestation-aggregator-5
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3030/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.etrid.service=relayer"
+      - "com.etrid.type=submission"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Prometheus - Metrics Collection and Alerting
+  # ═══════════════════════════════════════════════════════════════════════
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: etrid-bridge-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=90d'
+      - '--storage.tsdb.retention.size=100GB'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    volumes:
+      - ../monitoring/prometheus/bridge-monitors.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/prometheus/alerts-bridge.yml:/etc/prometheus/alerts-bridge.yml:ro
+      - prometheus-bridge-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - etrid-bridge
+    depends_on:
+      - bridge-monitor-btc
+      - bridge-monitor-sol
+      - bridge-monitor-eth
+      - bridge-monitor-bnb
+      - bridge-monitor-polygon
+      - bridge-monitor-trx
+      - bridge-monitor-xrp
+      - attestation-aggregator-1
+      - attestation-aggregator-2
+      - attestation-aggregator-3
+      - attestation-aggregator-4
+      - attestation-aggregator-5
+      - relayer-service
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.etrid.service=prometheus"
+      - "com.etrid.type=monitoring"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Grafana - Visualization and Dashboards
+  # ═══════════════════════════════════════════════════════════════════════
+
+  grafana:
+    image: grafana/grafana:10.1.5
+    container_name: etrid-bridge-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-etrid2025}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/bridge-overview.json
+    volumes:
+      - grafana-bridge-data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - etrid-bridge
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.etrid.service=grafana"
+      - "com.etrid.type=visualization"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Alertmanager - Alert Routing and Notifications
+  # ═══════════════════════════════════════════════════════════════════════
+
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: etrid-bridge-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    volumes:
+      - ../monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-bridge-data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - etrid-bridge
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "com.etrid.service=alertmanager"
+      - "com.etrid.type=alerting"
+
+# ═══════════════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════════════
+
+networks:
+  etrid-bridge:
+    name: etrid-bridge-network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+
+# ═══════════════════════════════════════════════════════════════════════
+# Volumes - Persistent Data Storage
+# ═══════════════════════════════════════════════════════════════════════
+
+volumes:
+  # Bridge Monitor Data
+  bridge-monitor-btc-data:
+    name: etrid-bridge-monitor-btc-data
+  bridge-monitor-btc-logs:
+    name: etrid-bridge-monitor-btc-logs
+  bridge-monitor-sol-data:
+    name: etrid-bridge-monitor-sol-data
+  bridge-monitor-sol-logs:
+    name: etrid-bridge-monitor-sol-logs
+  bridge-monitor-eth-data:
+    name: etrid-bridge-monitor-eth-data
+  bridge-monitor-eth-logs:
+    name: etrid-bridge-monitor-eth-logs
+  bridge-monitor-bnb-data:
+    name: etrid-bridge-monitor-bnb-data
+  bridge-monitor-bnb-logs:
+    name: etrid-bridge-monitor-bnb-logs
+  bridge-monitor-polygon-data:
+    name: etrid-bridge-monitor-polygon-data
+  bridge-monitor-polygon-logs:
+    name: etrid-bridge-monitor-polygon-logs
+  bridge-monitor-trx-data:
+    name: etrid-bridge-monitor-trx-data
+  bridge-monitor-trx-logs:
+    name: etrid-bridge-monitor-trx-logs
+  bridge-monitor-xrp-data:
+    name: etrid-bridge-monitor-xrp-data
+  bridge-monitor-xrp-logs:
+    name: etrid-bridge-monitor-xrp-logs
+
+  # Attestation Aggregator Data
+  attestation-aggregator-1-data:
+    name: etrid-attestation-aggregator-1-data
+  attestation-aggregator-1-logs:
+    name: etrid-attestation-aggregator-1-logs
+  attestation-aggregator-2-data:
+    name: etrid-attestation-aggregator-2-data
+  attestation-aggregator-2-logs:
+    name: etrid-attestation-aggregator-2-logs
+  attestation-aggregator-3-data:
+    name: etrid-attestation-aggregator-3-data
+  attestation-aggregator-3-logs:
+    name: etrid-attestation-aggregator-3-logs
+  attestation-aggregator-4-data:
+    name: etrid-attestation-aggregator-4-data
+  attestation-aggregator-4-logs:
+    name: etrid-attestation-aggregator-4-logs
+  attestation-aggregator-5-data:
+    name: etrid-attestation-aggregator-5-data
+  attestation-aggregator-5-logs:
+    name: etrid-attestation-aggregator-5-logs
+
+  # Relayer Service Data
+  relayer-service-data:
+    name: etrid-relayer-service-data
+  relayer-service-logs:
+    name: etrid-relayer-service-logs
+
+  # Monitoring Data
+  prometheus-bridge-data:
+    name: etrid-prometheus-bridge-data
+  grafana-bridge-data:
+    name: etrid-grafana-bridge-data
+  alertmanager-bridge-data:
+    name: etrid-alertmanager-bridge-data

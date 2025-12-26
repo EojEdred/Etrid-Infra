@@ -1,0 +1,280 @@
+# Alerting Rules for Ëtrid PrimeArc Core Chain Validators
+# These rules define when to trigger alerts based on metrics
+
+groups:
+  # ═══════════════════════════════════════════════════════════════════════
+  # Block Production Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: block_production
+    interval: 30s
+    rules:
+      - alert: NoBlocksProduced
+        expr: rate(substrate_block_height{chain="primearc_core_chain_mainnet"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: block_production
+        annotations:
+          summary: "No blocks being produced on {{ $labels.instance }}"
+          description: "Validator {{ $labels.instance }} has not produced any blocks in the last 5 minutes. Block production rate: {{ $value }}"
+          action: "Check validator node status, verify keys are loaded, ensure validator is in active set"
+
+      - alert: SlowBlockProduction
+        expr: rate(substrate_block_height{chain="primearc_core_chain_mainnet"}[5m]) < 0.15
+        for: 3m
+        labels:
+          severity: warning
+          category: block_production
+        annotations:
+          summary: "Slow block production on {{ $labels.instance }}"
+          description: "Block production rate is {{ $value | humanize }} blocks/sec (expected ~1 block/6s = 0.167 blocks/sec)"
+          action: "Monitor system resources, check for network issues"
+
+      - alert: BlockVerificationSlow
+        expr: |
+          histogram_quantile(0.95,
+            rate(substrate_block_verification_time_bucket{chain="primearc_core_chain_mainnet"}[5m])
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+          category: block_production
+        annotations:
+          summary: "Slow block verification on {{ $labels.instance }}"
+          description: "95th percentile block verification time is {{ $value }}s (should be <1s)"
+          action: "Check CPU usage and disk I/O performance"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Consensus & Finality Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: consensus
+    interval: 30s
+    rules:
+      - alert: FinalizationStalled
+        expr: |
+          substrate_block_height{chain="primearc_core_chain_mainnet"} -
+          substrate_finalized_height{chain="primearc_core_chain_mainnet"} > 50
+        for: 5m
+        labels:
+          severity: critical
+          category: consensus
+        annotations:
+          summary: "Block finalization stalled on {{ $labels.instance }}"
+          description: "Finalization lag is {{ $value }} blocks (threshold: 50 blocks)"
+          action: "Check if 2/3 validators are online, verify consensus, review logs for GRANDPA errors"
+
+      - alert: FinalizationLagHigh
+        expr: |
+          substrate_block_height{chain="primearc_core_chain_mainnet"} -
+          substrate_finalized_height{chain="primearc_core_chain_mainnet"} > 20
+        for: 3m
+        labels:
+          severity: warning
+          category: consensus
+        annotations:
+          summary: "High finalization lag on {{ $labels.instance }}"
+          description: "Finalization lag is {{ $value }} blocks (warning threshold: 20)"
+          action: "Monitor validator participation, check network conditions"
+
+      - alert: BlockProposalTimeSlow
+        expr: |
+          histogram_quantile(0.95,
+            rate(substrate_proposer_block_proposal_time_bucket{chain="primearc_core_chain_mainnet"}[5m])
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: consensus
+        annotations:
+          summary: "Slow block proposal on {{ $labels.instance }}"
+          description: "95th percentile block proposal time is {{ $value }}s"
+          action: "Check transaction pool size and system resources"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Network Health Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: network
+    interval: 30s
+    rules:
+      - alert: LowPeerCount
+        expr: substrate_sub_libp2p_peers_count{chain="primearc_core_chain_mainnet"} < 3
+        for: 3m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "Low peer count on {{ $labels.instance }}"
+          description: "Only {{ $value }} peers connected (expected: 5+)"
+          action: "Check network connectivity, verify P2P ports are accessible, review bootnode configuration"
+
+      - alert: NoPeersConnected
+        expr: substrate_sub_libp2p_peers_count{chain="primearc_core_chain_mainnet"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: network
+        annotations:
+          summary: "No peers connected on {{ $labels.instance }}"
+          description: "Validator is isolated from the network with 0 peers"
+          action: "URGENT: Check network connectivity, verify Tailscale connection, check firewall rules"
+
+      - alert: HighNetworkLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(substrate_sub_libp2p_notifications_total_bucket{chain="primearc_core_chain_mainnet"}[5m])
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "High network latency on {{ $labels.instance }}"
+          description: "95th percentile network latency is {{ $value }}s"
+          action: "Check network conditions, monitor bandwidth usage"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Transaction Pool Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: transaction_pool
+    interval: 30s
+    rules:
+      - alert: TransactionPoolFull
+        expr: substrate_ready_transactions_number{chain="primearc_core_chain_mainnet"} > 8000
+        for: 3m
+        labels:
+          severity: warning
+          category: txpool
+        annotations:
+          summary: "Transaction pool is full on {{ $labels.instance }}"
+          description: "Ready transactions: {{ $value }} (capacity typically ~8192)"
+          action: "Monitor transaction processing, check if transactions are being included in blocks"
+
+      - alert: TransactionPoolStalled
+        expr: |
+          rate(substrate_proposer_number_of_transactions{chain="primearc_core_chain_mainnet"}[5m]) == 0
+          AND substrate_ready_transactions_number{chain="primearc_core_chain_mainnet"} > 100
+        for: 3m
+        labels:
+          severity: warning
+          category: txpool
+        annotations:
+          summary: "Transaction pool stalled on {{ $labels.instance }}"
+          description: "{{ $value }} transactions in pool but not being processed"
+          action: "Check block production, verify validator is authoring blocks"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # System Resource Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: system_resources
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job=~"primearc_core_chain-validator.*"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | humanize }}%"
+          action: "Monitor process performance, check for resource contention"
+
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job=~"primearc_core_chain-validator.*"} / 1024 / 1024 / 1024 > 8
+        for: 5m
+        labels:
+          severity: warning
+          category: resources
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | humanize }} GB"
+          action: "Monitor memory trends, consider increasing RAM if persistent"
+
+      - alert: DatabaseCacheHigh
+        expr: substrate_database_cache_bytes{chain="primearc_core_chain_mainnet"} / 1024 / 1024 / 1024 > 10
+        for: 5m
+        labels:
+          severity: info
+          category: resources
+        annotations:
+          summary: "Large database cache on {{ $labels.instance }}"
+          description: "Database cache is {{ $value | humanize }} GB"
+          action: "This is informational - large cache is normal for validators"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Validator-Specific Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: validator_health
+    interval: 30s
+    rules:
+      - alert: ValidatorDown
+        expr: up{job=~"primearc_core_chain-validator.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: validator
+        annotations:
+          summary: "Validator {{ $labels.instance }} is DOWN"
+          description: "Cannot scrape metrics from validator {{ $labels.instance }}"
+          action: "URGENT: Check if validator process is running, verify network connectivity"
+
+      - alert: ValidatorNotAuthoring
+        expr: |
+          rate(substrate_proposer_block_constructed_count{chain="primearc_core_chain_mainnet"}[10m]) == 0
+        for: 15m
+        labels:
+          severity: warning
+          category: validator
+        annotations:
+          summary: "Validator {{ $labels.instance }} not authoring blocks"
+          description: "No blocks authored in the last 10 minutes"
+          action: "Check if validator is in active set, verify session keys are set"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # RPC Performance Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: rpc_performance
+    interval: 30s
+    rules:
+      - alert: HighRPCCallRate
+        expr: rate(substrate_rpc_calls_started{chain="primearc_core_chain_mainnet"}[5m]) > 100
+        for: 5m
+        labels:
+          severity: info
+          category: rpc
+        annotations:
+          summary: "High RPC call rate on {{ $labels.instance }}"
+          description: "RPC calls: {{ $value | humanize }}/sec"
+          action: "Monitor for potential DDoS or unexpected load"
+
+      - alert: SlowRPCCalls
+        expr: |
+          rate(substrate_rpc_calls_time_sum{chain="primearc_core_chain_mainnet"}[5m]) /
+          rate(substrate_rpc_calls_time_count{chain="primearc_core_chain_mainnet"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: rpc
+        annotations:
+          summary: "Slow RPC calls on {{ $labels.instance }}"
+          description: "Average RPC call time: {{ $value }}s"
+          action: "Check database performance and system resources"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Import Queue Alerts
+  # ═══════════════════════════════════════════════════════════════════════
+  - name: import_queue
+    interval: 30s
+    rules:
+      - alert: ImportQueueStalled
+        expr: rate(substrate_import_queue_processed_total{chain="primearc_core_chain_mainnet"}[5m]) == 0
+        for: 3m
+        labels:
+          severity: warning
+          category: sync
+        annotations:
+          summary: "Import queue stalled on {{ $labels.instance }}"
+          description: "No blocks being imported"
+          action: "Check sync status, verify peer connections"

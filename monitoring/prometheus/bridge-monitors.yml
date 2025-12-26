@@ -1,0 +1,266 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Prometheus Configuration for Ëtrid Bridge Monitoring Stack
+# Scrape configuration for all bridge monitors, aggregators, and relayer
+# ═══════════════════════════════════════════════════════════════════════
+
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'etrid-bridge'
+    environment: 'production'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# Load alerting rules
+rule_files:
+  - '/etc/prometheus/alerts-bridge.yml'
+
+# Scrape configurations
+scrape_configs:
+  # ═══════════════════════════════════════════════════════════════════════
+  # Prometheus Self-Monitoring
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+          type: 'monitoring'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Bitcoin Bridge Monitor
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'bridge-monitor-btc'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['bridge-monitor-btc:9100']
+        labels:
+          service: 'bridge-monitor'
+          chain: 'bitcoin'
+          chain_type: 'utxo'
+          pbc: 'bitcoin-pbc'
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'go_.*'
+        action: drop
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Solana Bridge Monitor
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'bridge-monitor-sol'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['bridge-monitor-sol:9101']
+        labels:
+          service: 'bridge-monitor'
+          chain: 'solana'
+          chain_type: 'account'
+          pbc: 'solana-pbc'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Ethereum Bridge Monitor
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'bridge-monitor-eth'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['bridge-monitor-eth:9102']
+        labels:
+          service: 'bridge-monitor'
+          chain: 'ethereum'
+          chain_type: 'evm'
+          pbc: 'ethereum-pbc'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # BNB Smart Chain Bridge Monitor
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'bridge-monitor-bnb'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['bridge-monitor-bnb:9103']
+        labels:
+          service: 'bridge-monitor'
+          chain: 'bnb'
+          chain_type: 'evm'
+          pbc: 'bnb-pbc'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Polygon Bridge Monitor
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'bridge-monitor-polygon'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['bridge-monitor-polygon:9104']
+        labels:
+          service: 'bridge-monitor'
+          chain: 'polygon'
+          chain_type: 'evm'
+          pbc: 'polygon-pbc'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Tron Bridge Monitor
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'bridge-monitor-trx'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['bridge-monitor-trx:9105']
+        labels:
+          service: 'bridge-monitor'
+          chain: 'tron'
+          chain_type: 'account'
+          pbc: 'tron-pbc'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # XRP Ledger Bridge Monitor
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'bridge-monitor-xrp'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['bridge-monitor-xrp:9106']
+        labels:
+          service: 'bridge-monitor'
+          chain: 'xrp'
+          chain_type: 'ledger'
+          pbc: 'xrp-pbc'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Attestation Aggregators (M-of-N)
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'attestation-aggregators'
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - 'attestation-aggregator-1:9110'
+          - 'attestation-aggregator-2:9111'
+          - 'attestation-aggregator-3:9112'
+          - 'attestation-aggregator-4:9113'
+          - 'attestation-aggregator-5:9114'
+        labels:
+          service: 'attestation-aggregator'
+          type: 'aggregation'
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: 'attestation-aggregator-([0-9]+):.*'
+        target_label: 'instance_id'
+        replacement: '$1'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Relayer Service
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'relayer-service'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['relayer-service:9120']
+        labels:
+          service: 'relayer'
+          type: 'submission'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # FlareChain Node Metrics
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'flarechain'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['10.0.0.100:9615']
+        labels:
+          service: 'flarechain'
+          type: 'relay-chain'
+          node_type: 'validator'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # PBC Collator Metrics
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'pbc-collators'
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - '10.0.0.101:9615'  # Solana-PBC
+          - '10.0.0.102:9615'  # BNB-PBC
+          - '10.0.0.103:9615'  # Ethereum-PBC
+          - '10.0.0.104:9615'  # Polygon-PBC
+          - '10.0.0.105:9615'  # Tron-PBC
+          - '10.0.0.106:9615'  # XRP-PBC
+          - '10.0.0.107:9615'  # Bitcoin-PBC
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: '10\.0\.0\.101:.*'
+        target_label: 'pbc'
+        replacement: 'solana-pbc'
+      - source_labels: [__address__]
+        regex: '10\.0\.0\.102:.*'
+        target_label: 'pbc'
+        replacement: 'bnb-pbc'
+      - source_labels: [__address__]
+        regex: '10\.0\.0\.103:.*'
+        target_label: 'pbc'
+        replacement: 'ethereum-pbc'
+      - source_labels: [__address__]
+        regex: '10\.0\.0\.104:.*'
+        target_label: 'pbc'
+        replacement: 'polygon-pbc'
+      - source_labels: [__address__]
+        regex: '10\.0\.0\.105:.*'
+        target_label: 'pbc'
+        replacement: 'tron-pbc'
+      - source_labels: [__address__]
+        regex: '10\.0\.0\.106:.*'
+        target_label: 'pbc'
+        replacement: 'xrp-pbc'
+      - source_labels: [__address__]
+        regex: '10\.0\.0\.107:.*'
+        target_label: 'pbc'
+        replacement: 'bitcoin-pbc'
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Blackbox Exporter - Endpoint Health Checks
+  # ═══════════════════════════════════════════════════════════════════════
+  - job_name: 'blackbox-http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://bridge-monitor-btc:3010/health
+          - http://bridge-monitor-sol:3011/health
+          - http://bridge-monitor-eth:3012/health
+          - http://bridge-monitor-bnb:3013/health
+          - http://bridge-monitor-polygon:3014/health
+          - http://bridge-monitor-trx:3015/health
+          - http://bridge-monitor-xrp:3016/health
+          - http://attestation-aggregator-1:3020/health
+          - http://attestation-aggregator-2:3021/health
+          - http://attestation-aggregator-3:3022/health
+          - http://attestation-aggregator-4:3023/health
+          - http://attestation-aggregator-5:3024/health
+          - http://relayer-service:3030/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+# ═══════════════════════════════════════════════════════════════════════
+# Remote Write Configuration (Optional - for long-term storage)
+# Uncomment to enable remote write to external TSDB
+# ═══════════════════════════════════════════════════════════════════════
+# remote_write:
+#   - url: "https://prometheus-remote-write.example.com/api/v1/write"
+#     basic_auth:
+#       username: "etrid"
+#       password: "your_password"
+#     queue_config:
+#       capacity: 10000
+#       max_shards: 50
+#       min_shards: 1
+#       max_samples_per_send: 5000
+#       batch_send_deadline: 5s
+#       min_backoff: 30ms
+#       max_backoff: 100ms

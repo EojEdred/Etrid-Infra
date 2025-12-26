@@ -1,0 +1,17 @@
+{
+  "name": "au-lightning-bloc-waitlist",
+  "version": "1.0.0",
+  "description": "AU Lightning Bloc virtual card waitlist API - Cloudflare Worker",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create au-lightning-bloc-waitlist",
+    "db:migrate": "wrangler d1 execute au-lightning-bloc-waitlist --file=./schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.24.0"
+  }
+}

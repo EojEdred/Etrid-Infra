@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  # Primearc Core Validator Alice
+  validator-alice:
+    image: etrid/node:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: etrid-validator-alice
+    ports:
+      - "9944:9944"  # WebSocket RPC
+      - "9933:9933"  # HTTP RPC
+      - "30333:30333" # P2P
+    volumes:
+      - alice-data:/data
+    command: >
+      --base-path /data
+      --chain dev
+      --alice
+      --validator
+      --rpc-external
+      --rpc-cors all
+      --ws-external
+      --prometheus-external
+      --prometheus-port 9615
+    networks:
+      - etrid-network
+
+  # Primearc Core Validator Bob
+  validator-bob:
+    image: etrid/node:latest
+    container_name: etrid-validator-bob
+    ports:
+      - "9945:9944"
+      - "9934:9933"
+      - "30334:30333"
+      - "9616:9616"
+    volumes:
+      - bob-data:/data
+    command: >
+      --base-path /data
+      --chain dev
+      --bob
+      --validator
+      --rpc-external
+      --rpc-cors all
+      --ws-external
+      --prometheus-external
+      --prometheus-port 9616
+      --bootnodes /dns/validator-alice/tcp/30333
+    networks:
+      - etrid-network
+    depends_on:
+      - validator-alice
+
+  # Primearc Core Full Node Charlie
+  fullnode-charlie:
+    image: etrid/node:latest
+    container_name: etrid-fullnode-charlie
+    ports:
+      - "9946:9944"
+      - "9935:9933"
+      - "30335:30333"
+      - "9617:9617"
+    volumes:
+      - charlie-data:/data
+    command: >
+      --base-path /data
+      --chain dev
+      --charlie
+      --rpc-external
+      --rpc-cors all
+      --ws-external
+      --prometheus-external
+      --prometheus-port 9617
+      --bootnodes /dns/validator-alice/tcp/30333
+    networks:
+      - etrid-network
+    depends_on:
+      - validator-alice
+      - validator-bob
+
+  # Prometheus (Monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: etrid-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./scripts/testnet/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./scripts/testnet/alerting-rules.yml:/etc/prometheus/alerting-rules.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - etrid-network
+    depends_on:
+      - validator-alice
+      - validator-bob
+      - fullnode-charlie
+
+  # Grafana (Dashboard)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: etrid-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./scripts/testnet/grafana-dashboard.json:/etc/grafana/provisioning/dashboards/etrid-dashboard.json:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=etrid2025
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    networks:
+      - etrid-network
+    depends_on:
+      - prometheus
+
+networks:
+  etrid-network:
+    driver: bridge
+
+volumes:
+  alice-data:
+  bob-data:
+  charlie-data:
+  prometheus-data:
+  grafana-data:

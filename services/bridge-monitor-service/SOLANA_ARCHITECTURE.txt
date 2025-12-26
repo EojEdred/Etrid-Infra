@@ -1,0 +1,172 @@
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 ËTRID SOLANA BRIDGE ARCHITECTURE                         │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+                                    USER DEPOSITS SOL
+                                           │
+                                           │ 1. Send transaction to Solana
+                                           │    with memo: ETRID:<recipient>
+                                           ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                  SOLANA BLOCKCHAIN                                       │
+│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
+│  │  Bridge Program: BRGPidxhcsLVFBQ5zZqRHZ8bKRAHhAhiEDCfqELV8M7u                     │  │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │  │
+│  │  │   Deposit   │  │ Token Burn  │  │  Withdraw   │  │    Mint     │            │  │
+│  │  │ Instruction │  │ Instruction │  │ Instruction │  │ Instruction │            │  │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘            │  │
+│  └──────────────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                          │
+│  Slot: 245,123 (confirmed) → ... → Slot: 245,154 (finalized, 31 confirmations)         │
+└────────────────────────────────┬─────────────────────────────────────────────────────────┘
+                                 │
+                                 │ 2. WebSocket subscription (onLogs)
+                                 │    wss://api.mainnet-beta.solana.com
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                           SOLANA MONITOR SERVICE (Node.js)                               │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │  SolanaMonitor.ts                                                                │   │
+│  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐              │   │
+│  │  │ WebSocket Client │→ │ Transaction      │→ │ Event Emitter    │              │   │
+│  │  │ - onLogs()       │  │ Parser           │  │ - depositConf.   │              │   │
+│  │  │ - Filter by      │  │ - Extract amount │  │ - burnConf.      │              │   │
+│  │  │   program ID     │  │ - Parse memo     │  │ - error          │              │   │
+│  │  │ - 'confirmed'    │  │ - Token mint     │  │                  │              │   │
+│  │  └──────────────────┘  └──────────────────┘  └──────────────────┘              │   │
+│  │                                                                                  │   │
+│  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐              │   │
+│  │  │ Confirmation     │  │ Signature        │  │ Metrics Export   │              │   │
+│  │  │ Tracker          │  │ Converter        │  │ - Prometheus     │              │   │
+│  │  │ - Pending map    │  │ - bs58 → bytes   │  │ - /metrics       │              │   │
+│  │  │ - Slot polling   │  │ - Split to       │  │ - Grafana        │              │   │
+│  │  │ - 31 confirms    │  │   H256 tuple     │  │                  │              │   │
+│  │  └──────────────────┘  └──────────────────┘  └──────────────────┘              │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                          │
+│  Dependencies: @solana/web3.js, bs58, winston, prom-client                              │
+└────────────────────────────────┬─────────────────────────────────────────────────────────┘
+                                 │
+                                 │ 3. Emit events
+                                 │    depositConfirmed({ etridRecipient, solPubkey,
+                                 │                       amount, signature, slot })
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              BRIDGE RELAYER SERVICE                                      │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │  Event Listener                                                                  │   │
+│  │  - Listen for depositConfirmed                                                   │   │
+│  │  - Listen for burnConfirmed                                                      │   │
+│  │  - Build Substrate extrinsics                                                    │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                          │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │  Extrinsic Builder (@polkadot/api)                                               │   │
+│  │  - Convert types (hex → AccountId32, string → u128)                              │   │
+│  │  - Sign with relayer key                                                         │   │
+│  │  - Submit via WebSocket                                                          │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+└────────────────────────────────┬─────────────────────────────────────────────────────────┘
+                                 │
+                                 │ 4. Submit extrinsic
+                                 │    ws://etrid-node:9944
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                        ËTRID PRIMEARC CORE CHAIN (Substrate)                            │
+│  ┌─────────────────────────────────────────────────────────────────────────────────┐   │
+│  │  Pallet: pallet-solana-bridge                                                    │   │
+│  │  Location: 05-multichain/bridges/protocols/solana-bridge/src/lib.rs             │   │
+│  │                                                                                   │   │
+│  │  Extrinsics:                                                                      │   │
+│  │  ┌────────────────────────────────────────────────────────────────────────┐     │   │
+│  │  │ initiate_sol_deposit(etrid_account, sol_pubkey, amount,                │     │   │
+│  │  │                      signature: (H256, H256), slot, confirmations)      │     │   │
+│  │  │ → Store in PendingDeposits                                             │     │   │
+│  │  └────────────────────────────────────────────────────────────────────────┘     │   │
+│  │                                                                                   │   │
+│  │  ┌────────────────────────────────────────────────────────────────────────┐     │   │
+│  │  │ confirm_sol_deposit(signature: (H256, H256))                           │     │   │
+│  │  │ → Check confirmations >= 31                                            │     │   │
+│  │  │ → Calculate fee (0.1%)                                                 │     │   │
+│  │  │ → Convert SOL to ËTR using exchange rate                               │     │   │
+│  │  │ → Mint ËTR to recipient                                                │     │   │
+│  │  │ → Move to ConfirmedDeposits                                            │     │   │
+│  │  └────────────────────────────────────────────────────────────────────────┘     │   │
+│  │                                                                                   │   │
+│  │  ┌────────────────────────────────────────────────────────────────────────┐     │   │
+│  │  │ process_etr_burn_from_solana(etrid_recipient, amount,                  │     │   │
+│  │  │                               sol_burn_tx: (H256, H256))                │     │   │
+│  │  │ → Check not in ProcessedSolanaBurns                                    │     │   │
+│  │  │ → Unlock ËTR from lock account                                         │     │   │
+│  │  │ → Transfer to recipient                                                │     │   │
+│  │  │ → Mark burn as processed                                               │     │   │
+│  │  └────────────────────────────────────────────────────────────────────────┘     │   │
+│  │                                                                                   │   │
+│  │  Storage:                                                                         │   │
+│  │  - PendingDeposits: Map<SolanaSignature, SolanaDeposit>                          │   │
+│  │  - ConfirmedDeposits: Map<AccountId, Vec<SolanaSignature>>                       │   │
+│  │  - ProcessedSolanaBurns: Map<SolanaSignature, bool>                              │   │
+│  │  - SolToEtrRate: u128                                                             │   │
+│  └─────────────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                          │
+│  User receives ËTR in their ËTRID account!                                              │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+DATA FLOW EXAMPLE:
+═════════════════
+
+User → Solana:
+  Deposit: 5 SOL
+  Memo: "ETRID:5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+  Signature: "5j7s7QycmXYKrWEQGXf9nxdBgvHWLjKKjNPVLHC5LNZ2jCZzhiXnFjQKy9L8qJZhDc9L1FJMkQJvj4NzpD3vXVkC"
+
+Monitor Detects:
+  Slot: 245,123 (confirmed)
+  Amount: 5,000,000,000 lamports
+  Recipient: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY (hex)
+  Pending...
+
+Monitor Confirms:
+  Slot: 245,154 (31 confirmations, finalized)
+  Signature tuple: [
+    "0x1234567890abcdef..." (first 32 bytes),
+    "0xfedcba0987654321..." (second 32 bytes)
+  ]
+  Event: depositConfirmed
+
+Relayer Submits:
+  Extrinsic: solanaBridge.initiateSolDeposit(...)
+  → Pending deposit stored
+
+Relayer Confirms:
+  Extrinsic: solanaBridge.confirmSolDeposit([sig1, sig2])
+  Fee: 5,000,000 lamports (0.1%)
+  Net: 4,995,000,000 lamports
+  Rate: 1:1
+  Mint: 4.995 ËTR
+
+User Balance:
+  ËTR Balance: 4.995 ËTR ✓
+
+
+MONITORING STACK:
+════════════════
+
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│ SolanaMonitor│ →  │  Prometheus  │ →  │   Grafana    │ →  │   Alerts     │
+│ /metrics     │    │  Scraper     │    │  Dashboard   │    │ Slack/Email  │
+└──────────────┘    └──────────────┘    └──────────────┘    └──────────────┘
+       │                                                             │
+       │ Metrics:                                                    │
+       │ - solana_connected: 1                                       │
+       │ - solana_slot_height: 245154                                │
+       │ - deposits_seen_total: 142                                  │
+       │ - deposits_confirmed_total: 140                             │
+       │ - pending_deposits: 2                                       │
+       │ - errors_total: 0                                           │
+       │                                                              │
+       └──────────────────────────────────────────────────────────────┘

@@ -1,0 +1,90 @@
+{
+  "operator": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+  "relayers": [
+    "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+    "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"
+  ],
+  "chains": {
+    "solana": {
+      "pbc_name": "solana-pbc",
+      "pbc_endpoint": "ws://10.0.0.101:9944",
+      "http_endpoint": "http://10.0.0.101:9933",
+      "token_address": "CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp",
+      "exchange_rate": "1000000000",
+      "bridge_address": "BridgeGov1111111111111111111111111111111",
+      "decimals": 9
+    },
+    "bnb": {
+      "pbc_name": "bnb-pbc",
+      "pbc_endpoint": "ws://10.0.0.102:9944",
+      "http_endpoint": "http://10.0.0.102:9933",
+      "token_address": "0x55d398326f99059fF775485246999027B3197955",
+      "exchange_rate": "1000000000000000000",
+      "bridge_address": "0x1234567890123456789012345678901234567890",
+      "decimals": 18
+    },
+    "ethereum": {
+      "pbc_name": "ethereum-pbc",
+      "pbc_endpoint": "ws://10.0.0.103:9944",
+      "http_endpoint": "http://10.0.0.103:9933",
+      "token_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "exchange_rate": "1000000000000000000",
+      "bridge_address": "0x2345678901234567890123456789012345678901",
+      "decimals": 18
+    },
+    "polygon": {
+      "pbc_name": "polygon-pbc",
+      "pbc_endpoint": "ws://10.0.0.104:9944",
+      "http_endpoint": "http://10.0.0.104:9933",
+      "token_address": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+      "exchange_rate": "1000000000000000000",
+      "bridge_address": "0x3456789012345678901234567890123456789012",
+      "decimals": 18
+    },
+    "tron": {
+      "pbc_name": "tron-pbc",
+      "pbc_endpoint": "ws://10.0.0.105:9944",
+      "http_endpoint": "http://10.0.0.105:9933",
+      "token_address": "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+      "exchange_rate": "1000000",
+      "bridge_address": "TXYZaTvH2xAJLcvyuDJxBpvz4vGjKmDqKK",
+      "decimals": 6
+    },
+    "xrp": {
+      "pbc_name": "xrp-pbc",
+      "pbc_endpoint": "ws://10.0.0.106:9944",
+      "http_endpoint": "http://10.0.0.106:9933",
+      "token_address": "rN7n7otQDd6FczFgLdlqtyMVrn3HMfXwEP",
+      "exchange_rate": "1000000",
+      "bridge_address": "rBridgeXRPLedger1111111111111111111",
+      "decimals": 6
+    },
+    "bitcoin": {
+      "pbc_name": "bitcoin-pbc",
+      "pbc_endpoint": "ws://10.0.0.107:9944",
+      "http_endpoint": "http://10.0.0.107:9933",
+      "token_address": "bc1qbridge123456789abcdefghijklmnopqrstuvw",
+      "exchange_rate": "100000000",
+      "bridge_address": "bc1qgovernance123456789abcdefghijklmnop",
+      "decimals": 8
+    }
+  },
+  "flarechain": {
+    "endpoint": "ws://10.0.0.100:9944",
+    "http_endpoint": "http://10.0.0.100:9933"
+  },
+  "configuration": {
+    "max_transfer_amount": "1000000000000",
+    "min_transfer_amount": "1000000",
+    "bridge_fee_percent": "0.1",
+    "confirmation_blocks": {
+      "solana": 32,
+      "bnb": 15,
+      "ethereum": 12,
+      "polygon": 128,
+      "tron": 19,
+      "xrp": 1,
+      "bitcoin": 6
+    }
+  }
+}

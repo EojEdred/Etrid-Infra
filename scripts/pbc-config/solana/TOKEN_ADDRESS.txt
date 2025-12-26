@@ -1,0 +1,160 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                       ËTR TOKEN ADDRESS CONVERSION                           ║
+║                    Solana SPL ←→ Sol-PBC Bridge                             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ SOLANA SPL TOKEN (Base58)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp
+
+Format:   Base58 (Solana standard)
+Chain:    Solana Mainnet
+Type:     SPL Token Mint Address
+Decimals: 9
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ SOL-PBC TOKEN (H256 Hex)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+0xa5c25b944117c17fc1cd26555761e1a274c6576df5a48a7e51183ba211aba65f
+
+Format:   H256 (32-byte hex with 0x prefix)
+Chain:    Sol-PBC (Substrate-based PBC)
+Type:     Token Identifier
+Decimals: 9
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ BYTE REPRESENTATION (32 bytes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Offset | Hex Values                                      | ASCII
+-------|------------------------------------------------|------------------
+00-0F  | a5 c2 5b 94 41 17 c1 7f c1 cd 26 55 57 61 e1 a2 | ..[.A.....&UWa..
+10-1F  | 74 c6 57 6d f5 a4 8a 7e 51 18 3b a2 11 ab a6 5f | t.Wm...~Q.;...._
+
+Decimal Array:
+[165, 194, 91, 148, 65, 23, 193, 127, 193, 205, 38, 85, 87, 97, 225, 162,
+ 116, 198, 87, 109, 245, 164, 138, 126, 81, 24, 59, 162, 17, 171, 166, 95]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CONVERSION VERIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Forward Conversion (Base58 → H256):
+  Input:  CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp
+  Output: 0xa5c25b944117c17fc1cd26555761e1a274c6576df5a48a7e51183ba211aba65f
+  Status: VERIFIED
+
+✓ Reverse Conversion (H256 → Base58):
+  Input:  0xa5c25b944117c17fc1cd26555761e1a274c6576df5a48a7e51183ba211aba65f
+  Output: CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp
+  Status: VERIFIED
+
+✓ Length Validation:
+  Base58 Decoded: 32 bytes ✓
+  H256 Length:    32 bytes ✓
+  Match:          YES ✓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ BRIDGE PARAMETERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Exchange Rate:       1:1 (represented as 10^9 = 1,000,000,000)
+Decimals:            9 (both chains)
+Min Transfer:        0.001 ËTR (1,000,000 base units)
+Max Transfer:        1,000,000 ËTR (1,000,000,000,000,000 base units)
+Transfer Fee:        0.1% (10 basis points)
+Confirmations:       32 Solana blocks
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ USAGE IN CONFIGURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Substrate Extrinsic (addSupportedToken):
+╭──────────────────────────────────────────────────────────────────────────╮
+│ polkadot-js-api --ws wss://sol-pbc-rpc.etrid.network \                   │
+│   tx.bridgeConfig.addSupportedToken \                                    │
+│   '0xa5c25b944117c17fc1cd26555761e1a274c6576df5a48a7e51183ba211aba65f' \ │
+│   '1000000000' \                                                         │
+│   9 \                                                                    │
+│   --seed "$OPERATOR_SEED"                                                │
+╰──────────────────────────────────────────────────────────────────────────╯
+
+Configuration File (sol-pbc-config.json):
+╭──────────────────────────────────────────────────────────────────────────╮
+│ "tokens": {                                                              │
+│   "ETR": {                                                               │
+│     "spl_address": "CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp",       │
+│     "h256_address": "0xa5c25b944117c17fc1cd26555761e1a274c6576df5a48... │
+│     "decimals": 9,                                                       │
+│     "exchange_rate": "1000000000"                                        │
+│   }                                                                      │
+│ }                                                                        │
+╰──────────────────────────────────────────────────────────────────────────╯
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CONVERSION TOOLS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Python Script:
+  ./convert-address.py CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp
+  ./convert-address.py --reverse 0xa5c25b944117c17fc1cd26555761e1a274c6576df5a48a7e51183ba211aba65f
+
+Python One-Liner (Forward):
+  python3 -c "import base58; print('0x' + base58.b58decode('CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp').hex())"
+
+Python One-Liner (Reverse):
+  python3 -c "import base58; print(base58.b58encode(bytes.fromhex('a5c25b944117c17fc1cd26555761e1a274c6576df5a48a7e51183ba211aba65f')).decode())"
+
+JavaScript:
+  const bs58 = require('bs58');
+  const h256 = '0x' + Buffer.from(bs58.decode('CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp')).toString('hex');
+
+Rust:
+  use bs58;
+  let bytes = bs58::decode("CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp").into_vec().unwrap();
+  let h256 = format!("0x{}", hex::encode(bytes));
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ LINKS & REFERENCES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Solana Explorer:
+  https://explorer.solana.com/address/CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp
+
+Solscan:
+  https://solscan.io/token/CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp
+
+Sol-PBC Explorer:
+  https://sol-pbc.etrid.network/tokens/0xa5c25b944117c17fc1cd26555761e1a274c6576df5a48a7e51183ba211aba65f
+
+Documentation:
+  README.md - Complete setup guide
+  QUICK_START.md - Fast setup (3 steps)
+  CONVERSION_DETAILS.md - Technical deep dive
+  INDEX.md - Navigation guide
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ SECURITY NOTICE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠ CRITICAL: This address mapping is IMMUTABLE once deployed to production
+⚠ VERIFY: Always verify both addresses independently before configuration
+⚠ AUDIT: Have this conversion audited by multiple parties
+⚠ TEST: Test with small amounts on testnet/devnet first
+
+Bridge Security Invariant:
+  Total_Supply_Solana + Total_Supply_Sol-PBC = Constant
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Generated: 2025-12-01
+Version: 1.0.0
+Etrid Core Team
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  Use this H256 address in Sol-PBC configuration:                            ║
+║  0xa5c25b944117c17fc1cd26555761e1a274c6576df5a48a7e51183ba211aba65f          ║
+╚══════════════════════════════════════════════════════════════════════════════╝

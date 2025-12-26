@@ -1,0 +1,51 @@
+{
+  "chain_name": "Solana",
+  "pbc_name": "Sol-PBC",
+  "network": "mainnet-beta",
+  "rpc_endpoint": "https://api.mainnet-beta.solana.com",
+  "sol_pbc_node": "wss://sol-pbc-rpc.etrid.network",
+  "tokens": {
+    "ETR": {
+      "name": "Etrid Token",
+      "symbol": "ËTR",
+      "spl_address": "CA4ALvCam45ecioBfZ7BzPsXMf3r6BRXZ8iKdGpPmqhp",
+      "h256_address": "0xa5c25b944117c17fc1cd26555761e1a274c6576df5a48a7e51183ba211aba65f",
+      "decimals": 9,
+      "exchange_rate": "1000000000",
+      "comment": "1:1 exchange rate with FlareChain ËTR (10^9 for 9 decimals)"
+    }
+  },
+  "operator": {
+    "account": "OPERATOR_ACCOUNT_PLACEHOLDER",
+    "comment": "Replace with the Substrate account that will manage the bridge"
+  },
+  "relayers": [
+    {
+      "account": "RELAYER_1_ACCOUNT_PLACEHOLDER",
+      "solana_wallet": "SOLANA_WALLET_1_PLACEHOLDER",
+      "comment": "Primary relayer for Solana <-> Sol-PBC bridge"
+    },
+    {
+      "account": "RELAYER_2_ACCOUNT_PLACEHOLDER",
+      "solana_wallet": "SOLANA_WALLET_2_PLACEHOLDER",
+      "comment": "Secondary relayer for redundancy"
+    },
+    {
+      "account": "RELAYER_3_ACCOUNT_PLACEHOLDER",
+      "solana_wallet": "SOLANA_WALLET_3_PLACEHOLDER",
+      "comment": "Tertiary relayer for high availability"
+    }
+  ],
+  "bridge_parameters": {
+    "min_transfer_amount": "1000000",
+    "max_transfer_amount": "1000000000000000",
+    "transfer_fee_bps": 10,
+    "confirmation_threshold": 32,
+    "comment": "min: 0.001 ËTR, max: 1M ËTR, fee: 0.1%, confirmations: 32 blocks"
+  },
+  "metadata": {
+    "created": "2025-12-01",
+    "version": "1.0.0",
+    "author": "Etrid Core Team"
+  }
+}

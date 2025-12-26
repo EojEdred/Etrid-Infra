@@ -1,0 +1,16 @@
+{
+  "token_name": "Ëtrid",
+  "token_symbol": "ÉTR",
+  "token_address": "CA4ALvCam7N3ya8d2axp3AakwNdCdQchQNNwYSYiMRR4",
+  "token_account": "7aJpbr9rS2v3FYQnrEbrQEgw694qcofM1GtFwdECTz8N",
+  "decimals": 9,
+  "total_supply": 2521014000,
+  "deployer_address": "2yXQ6uXTp4PwKrJWcjWN9AM6FmGTnEAhmbHJU5hbNnJM",
+  "network": "mainnet-beta",
+  "deployed_at": "2025-12-01T22:00:00Z",
+  "mint_disabled": true,
+  "logo_uri": "https://arweave.net/ga6lvo-_6QoGFrLhO8T6_2FtHHMkCsas0LIEFZT3voI",
+  "metadata_uri": "https://arweave.net/M2OtLp8Q3OaDrn3jmYjR5ZQO3G05NMxucyEiErc9n3Q",
+  "metadata_pda": "WUUQUdQNj6yYerXtgXETk6562KpjEo8y7cWE5QzNBs2",
+  "status": "ready_for_pool"
+}

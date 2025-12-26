@@ -1,0 +1,128 @@
+version: '3.8'
+
+# Ëtrid PrimeArc Core Chain Validator Monitoring Stack
+# Docker Compose configuration for Prometheus + Grafana
+
+services:
+  # ═══════════════════════════════════════════════════════════════════════
+  # Prometheus - Metrics Collection and Storage
+  # ═══════════════════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: etrid-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.size=100GB'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus-primearc_core_chain.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerting-rules-primearc_core_chain.yml:/etc/prometheus/alerting-rules-primearc_core_chain.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - etrid-monitoring
+    labels:
+      - "com.etrid.service=prometheus"
+      - "com.etrid.description=Metrics collection for PrimeArc Core Chain validators"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Grafana - Metrics Visualization
+  # ═══════════════════════════════════════════════════════════════════════
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: etrid-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=etrid2025
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana-provisioning:/etc/grafana/provisioning:ro
+      - ./grafana-dashboard-primearc_core_chain.json:/etc/grafana/provisioning/dashboards/primearc_core_chain.json:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - etrid-monitoring
+    depends_on:
+      - prometheus
+    labels:
+      - "com.etrid.service=grafana"
+      - "com.etrid.description=Dashboard visualization for PrimeArc Core Chain metrics"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Optional: Alertmanager - Alert Routing and Notifications
+  # Uncomment to enable alerting notifications
+  # ═══════════════════════════════════════════════════════════════════════
+  # alertmanager:
+  #   image: prom/alertmanager:v0.26.0
+  #   container_name: etrid-alertmanager
+  #   restart: unless-stopped
+  #   command:
+  #     - '--config.file=/etc/alertmanager/alertmanager.yml'
+  #     - '--storage.path=/alertmanager'
+  #   volumes:
+  #     - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+  #     - alertmanager-data:/alertmanager
+  #   ports:
+  #     - "9093:9093"
+  #   networks:
+  #     - etrid-monitoring
+  #   labels:
+  #     - "com.etrid.service=alertmanager"
+  #     - "com.etrid.description=Alert routing and notifications"
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # Optional: Node Exporter - System-level metrics
+  # Uncomment to monitor the host machine
+  # ═══════════════════════════════════════════════════════════════════════
+  # node-exporter:
+  #   image: prom/node-exporter:v1.6.0
+  #   container_name: etrid-node-exporter
+  #   restart: unless-stopped
+  #   command:
+  #     - '--path.procfs=/host/proc'
+  #     - '--path.sysfs=/host/sys'
+  #     - '--path.rootfs=/rootfs'
+  #     - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+  #   volumes:
+  #     - /proc:/host/proc:ro
+  #     - /sys:/host/sys:ro
+  #     - /:/rootfs:ro
+  #   ports:
+  #     - "9100:9100"
+  #   networks:
+  #     - etrid-monitoring
+  #   labels:
+  #     - "com.etrid.service=node-exporter"
+  #     - "com.etrid.description=System-level metrics exporter"
+
+# ═══════════════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════════════
+networks:
+  etrid-monitoring:
+    name: etrid-monitoring
+    driver: bridge
+
+# ═══════════════════════════════════════════════════════════════════════
+# Volumes - Persistent Data Storage
+# ═══════════════════════════════════════════════════════════════════════
+volumes:
+  prometheus-data:
+    name: etrid-prometheus-data
+    driver: local
+  grafana-data:
+    name: etrid-grafana-data
+    driver: local
+  # alertmanager-data:
+  #   name: etrid-alertmanager-data
+  #   driver: local

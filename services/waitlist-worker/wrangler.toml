@@ -1,0 +1,17 @@
+# AU Lightning Bloc Waitlist Worker
+# Deploy with: wrangler deploy
+
+name = "au-lightning-bloc-waitlist"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Production route
+# routes = [
+#   { pattern = "api.etrid.org/v1/waitlist/*", zone_name = "etrid.org" }
+# ]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "WAITLIST_DB"
+database_name = "au-lightning-bloc-waitlist"
+database_id = "7c3c9c78-94a4-4a74-8e24-93f788bcd3cb"

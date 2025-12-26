@@ -1,0 +1,70 @@
+# Prometheus Configuration for ËTRID Bridge Monitor Service
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'etrid-bridge-monitor'
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+rule_files:
+  # - "alerts/*.yml"
+
+scrape_configs:
+  # Bridge Monitor Service
+  - job_name: 'bridge-monitor'
+    static_configs:
+      - targets: ['bridge-monitor:9092']
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # FlareChain (Primearc Core)
+  - job_name: 'flarechain'
+    static_configs:
+      - targets: ['10.0.0.100:9615']
+    metrics_path: /metrics
+
+  # Partition Burst Chains
+  - job_name: 'pbc-solana'
+    static_configs:
+      - targets: ['10.0.0.101:9615']
+    metrics_path: /metrics
+
+  - job_name: 'pbc-bnb'
+    static_configs:
+      - targets: ['10.0.0.102:9615']
+    metrics_path: /metrics
+
+  - job_name: 'pbc-ethereum'
+    static_configs:
+      - targets: ['10.0.0.103:9615']
+    metrics_path: /metrics
+
+  - job_name: 'pbc-polygon'
+    static_configs:
+      - targets: ['10.0.0.104:9615']
+    metrics_path: /metrics
+
+  - job_name: 'pbc-tron'
+    static_configs:
+      - targets: ['10.0.0.105:9615']
+    metrics_path: /metrics
+
+  - job_name: 'pbc-xrp'
+    static_configs:
+      - targets: ['10.0.0.106:9615']
+    metrics_path: /metrics
+
+  - job_name: 'pbc-bitcoin'
+    static_configs:
+      - targets: ['10.0.0.107:9615']
+    metrics_path: /metrics
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']

@@ -1,0 +1,18 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Grafana Dashboard Provisioning Configuration
+# Automatically load dashboards from /etc/grafana/provisioning/dashboards
+# ═══════════════════════════════════════════════════════════════════════
+
+apiVersion: 1
+
+providers:
+  - name: 'Etrid Bridge Dashboards'
+    orgId: 1
+    folder: 'Bridge Monitoring'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: true
